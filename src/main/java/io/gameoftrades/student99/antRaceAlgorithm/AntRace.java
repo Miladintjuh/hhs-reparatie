@@ -1,75 +1,120 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package io.gameoftrades.student99.antRaceAlgorithm;
 
-/**
- *
- * @author Rebano
- */
-public class AntRace {
-       
-    public static void main(String[] args) {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+import io.gameoftrades.debug.Debuggable;
+import io.gameoftrades.debug.Debugger;
+import io.gameoftrades.debug.DummyDebugger;
+import io.gameoftrades.student49.PadImpl;
+import io.gameoftrades.model.algoritme.SnelstePadAlgoritme;
+import io.gameoftrades.model.kaart.Coordinaat;
+import io.gameoftrades.model.kaart.Kaart;
+import io.gameoftrades.model.kaart.Pad;
+import io.gameoftrades.model.kaart.Richting;
+
+
+
+public class AntRace implements SnelstePadAlgoritme, Debuggable {
+   
+    public Pad bereken(Kaart map, Coordinaat start, Coordinaat end) {
+        Integer[][] costs = new Integer[map.getHoogte()][map.getBreedte()];
+        List<Travel> ants = new ArrayList<>();
+        Ant parent = new Ant(map.getTerreinOp(start), costs);
+        ants.add(new Travel(parent));
+        Ant prime = race(map, ants, costs, end);
+        debug.debugRaster(map, costs);
+        return backtrack(prime, map, start, costs);
+    }
+
+    private Pad backtrack(Ant prime, Kaart map, Coordinaat start, Integer[][] costs) {
+       //instantiate the variables
+        List<Richting> path = new ArrayList<Richting>();
+        Coordinaat current = prime.getCoordinaat();
+        Coordinaat previous = null;
+        Ant child =  prime;
         
-        // Create and add our cities
-        City city = new City(60, 200);
-        TourManager.addCity(city);
-        City city2 = new City(180, 200);
-        TourManager.addCity(city2);
-        City city3 = new City(80, 180);
-        TourManager.addCity(city3);
-        City city4 = new City(140, 180);
-        TourManager.addCity(city4);
-        City city5 = new City(20, 160);
-        TourManager.addCity(city5);
-        City city6 = new City(100, 160);
-        TourManager.addCity(city6);
-        City city7 = new City(200, 160);
-        TourManager.addCity(city7);
-        City city8 = new City(140, 140);
-        TourManager.addCity(city8);
-        City city9 = new City(40, 120);
-        TourManager.addCity(city9);
-        City city10 = new City(100, 120);
-        TourManager.addCity(city10);
-        City city11 = new City(180, 100);
-        TourManager.addCity(city11);
-        City city12 = new City(60, 80);
-        TourManager.addCity(city12);
-        City city13 = new City(120, 80);
-        TourManager.addCity(city13);
-        City city14 = new City(180, 60);
-        TourManager.addCity(city14);
-        City city15 = new City(20, 40);
-        TourManager.addCity(city15);
-        City city16 = new City(100, 40);
-        TourManager.addCity(city16);
-        City city17 = new City(200, 40);
-        TourManager.addCity(city17);
-        City city18 = new City(20, 20);
-        TourManager.addCity(city18);
-        City city19 = new City(60, 20);
-        TourManager.addCity(city19);
-        City city20 = new City(160, 20);
-        TourManager.addCity(city20);
+        while (child != null) {
+            Ant ouder = child.getParent();
+            if (ouder!=null) {
+                previous = ouder.getCoordinaat();
+                path.add(Richting.tussen(previous, current));
+            }
+            child = ouder;
+            current = previous;
+        } 
+        //reverse the path so it can be drawn
+        Collections.reverse(path);
+        
+        Richting[] path2 = new Richting[path.size()];
+        path2 = path.toArray(path2);
 
-        // Initialize population
-        Population pop = new Population(50, true);
-        System.out.println("Initial distance: " + pop.getFittest().getDistance());
+        PadImpl result = new PadImpl(path2, prime.getCost());
+        //send the info to the gui
+        debug.debugPad(map, start, result);
+        return result;
+    }
 
-        // Evolve population for 100 generations
-        pop = GA.evolvePopulation(pop);
-        for (int i = 0; i <100; i++) {
-            pop = GA.evolvePopulation(pop);
+    private Ant race(Kaart kaart, List<Travel> ants, Integer[][] costs, Coordinaat eind) {
+        while (true) {
+            List<Travel> nextGen = new ArrayList<>();
+            for (Travel travelAnt : ants) {
+                travelAnt.next();
+                if (travelAnt.isDaar()) {
+                    Ant ant = travelAnt.getMier();
+                    boolean spawn = ant.atLocation(costs);
+                    if (eind.equals(ant.getCoordinaat())) {
+                        return ant;
+                    }
+                    if (spawn) {
+                        for (Richting r : ant.getTerrein().getMogelijkeRichtingen()) {
+                            Coordinaat volgende = ant.getCoordinaat().naar(r);
+                            if (isEmpty(costs, volgende)) {
+                                Ant child = new Ant(ant, kaart.getTerreinOp(volgende));
+                                nextGen.add(new Travel(child));
+                            }
+                        }
+                    }
+                } else {
+                    nextGen.add(travelAnt);
+                }
+            }
+            debug.debugRaster(kaart, costs);
+            ants = nextGen;
         }
+    }
 
-        // Print final results
-        System.out.println("Finished");
-        System.out.println("Final distance: " + pop.getFittest().getDistance());
-        System.out.println("Solution:");
-        System.out.println(pop.getFittest());
-}
+    private boolean isEmpty(Integer[][] costs, Coordinaat next) {
+        return costs[next.getY()][next.getX()] == null;
+    }
+
+//    public void dumpCosts(Integer[][] costs) {
+//        for (int y = 0; y < costs.length; y++) {
+//            for (int x = 0; x < costs[0].length; x++) {
+//                if (costs[y][x] == null) {
+//                    System.out.print("--");
+//                } else {
+//                    if (costs[y][x] < 10) {
+//                        System.out.print(".");
+//                    }
+//                    System.out.print(costs[y][x]);
+//                }
+//                System.out.print(" ");
+//            }
+//            System.out.println();
+//        }
+//    }
+
+    @Override
+    public String toString() {
+        return "AntRace";
+    }
+
+    private Debugger debug = new DummyDebugger();
+
+    @Override
+    public void setDebugger(Debugger debugger) {
+        this.debug = debugger;
+    }
 }

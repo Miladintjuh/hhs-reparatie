@@ -5,6 +5,8 @@ import io.gameoftrades.model.algoritme.HandelsplanAlgoritme;
 import io.gameoftrades.model.algoritme.SnelstePadAlgoritme;
 import io.gameoftrades.model.algoritme.StedenTourAlgoritme;
 import io.gameoftrades.model.lader.WereldLader;
+import io.gameoftrades.student99.CityTour.CityTour;
+import io.gameoftrades.student99.antRaceAlgorithm.AntRace;
 
 /**
  * Welkom bij Game of Trades! 
@@ -33,7 +35,7 @@ public class HandelaarImpl implements Handelaar {
     @Override
     public SnelstePadAlgoritme nieuwSnelstePadAlgoritme() {
         // TODO Auto-generated method stub
-        return null;
+        return new AntRace();
     }
 
     /**
@@ -41,7 +43,7 @@ public class HandelaarImpl implements Handelaar {
      */
     @Override
     public StedenTourAlgoritme nieuwStedenTourAlgoritme() {
-        // TODO Auto-generated method stub
+        // 1. Execute the city tour.
         return null;
     }
 

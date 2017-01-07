@@ -11,8 +11,6 @@ import io.gameoftrades.model.markt.Handel;
 import io.gameoftrades.model.markt.HandelType;
 import io.gameoftrades.model.markt.Handelswaar;
 import io.gameoftrades.model.markt.Markt;
-import io.gameoftrades.student99.antRaceAlgorithm.City;
-import io.gameoftrades.student99.antRaceAlgorithm.TourManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -31,13 +29,13 @@ public class WereldLaderImpl implements WereldLader {
 
         Scanner in = new Scanner(this.getClass().getResourceAsStream(resource));
         mapReader = new ArrayList<>();
-        ArrayList<String> kaartText = new ArrayList<>();
-        ArrayList<String> stedenText = new ArrayList<>();
-        ArrayList<String> marktenText = new ArrayList<>();
+        ArrayList<String> mapText = new ArrayList<>();
+        ArrayList<String> cityText = new ArrayList<>();
+        ArrayList<String> marketText = new ArrayList<>();
 
-        mapReader.add(kaartText);
-        mapReader.add(stedenText);
-        mapReader.add(marktenText);
+        mapReader.add(mapText);
+        mapReader.add(cityText);
+        mapReader.add(marketText);
 
         int index = 0;
 
@@ -47,21 +45,18 @@ public class WereldLaderImpl implements WereldLader {
             if (line.matches("\\d+")) {
                 index++;
             } else {
-                //System.out.println(line);
                 mapReader.get(index).add(line);
             }
         }
 
-        laadKaart();
-        //System.out.println("");
-        laadSteden();
-        //System.out.println("");
-        laadMarkten();
+        loadMap();
+        loadCities();
+        loadMarkets();
 
         return new Wereld(map, cities, market);
     }
 
-    private void laadKaart() {
+    private void loadMap() {
         String xy = mapReader.get(0).get(0);
         String[] xyArray = xy.split(",");
 
@@ -87,7 +82,7 @@ public class WereldLaderImpl implements WereldLader {
         }
     }
 
-    public void laadSteden() {
+    public void loadCities() {
         cities = new ArrayList<>();
 
         for (String s : mapReader.get(1)) {
@@ -98,27 +93,24 @@ public class WereldLaderImpl implements WereldLader {
                         "Incorrecte stad...",
                         "FATAL ERROR",
                         JOptionPane.ERROR_MESSAGE);
-                throw new IllegalArgumentException("Coördianten van stad buiten de kaart " + c);
+                throw new IllegalArgumentException("One or more coordinates were outside of the map " + c);
             }
-            Stad stad = new Stad(c, split[2]);
-            cities.add(stad);
+            Stad city = new Stad(c, split[2]);
+            cities.add(city);
 
             System.out.println(split[0] + " " + split[1] + " " + split[2]);
             System.out.println(c);
-            
-         int co1 = Integer.parseInt(split[0]) - 1;
-         int co2 = Integer.parseInt(split[1]) - 1;
-        City city21 = new City(co1, co2);
-        TourManager.addCity(city21);
-        }
+   
+       }
+        
     }
 
-    private void laadMarkten() {
+    private void loadMarkets() {
         dealers = new ArrayList<>();
 
         for (String s : mapReader.get(2)) {
             String[] split = s.split(",");
-            HandelType handelType;
+            HandelType merchType;
             if (!split[1].equals("BIEDT") && !split[1].equals("VRAAGT")) {
                 JOptionPane.showMessageDialog(null,
                         "Incorrecte Markt...",
@@ -126,14 +118,13 @@ public class WereldLaderImpl implements WereldLader {
                         JOptionPane.ERROR_MESSAGE);
                 throw new IllegalArgumentException("Verkeerde Handel");
             } else if (split[1].equals("BIEDT")) {
-                handelType = HandelType.BIEDT;
+                merchType = HandelType.BIEDT;
             } else {
-                handelType = HandelType.VRAAGT;
+                merchType = HandelType.VRAAGT;
             }
-            Handel handel = new Handel(zoekStadBijNaam(split[0]), handelType, new Handelswaar(split[2]), Integer.parseInt(split[3]));
+            Handel handel = new Handel(zoekStadBijNaam(split[0]), merchType, new Handelswaar(split[2]), Integer.parseInt(split[3]));
             dealers.add(handel);
 
-            //System.out.println(split[0] + " " + split[1] + " " + split[2] + " " + split[3]);
         }
         market = new Markt(dealers);
     }
