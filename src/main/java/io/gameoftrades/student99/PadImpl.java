@@ -1,14 +1,12 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package io.gameoftrades.student99;
 
 import io.gameoftrades.model.kaart.Coordinaat;
 import io.gameoftrades.model.kaart.Pad;
 import io.gameoftrades.model.kaart.Richting;
-
+/**
+ *
+ * @author Rebano
+ */
 public class PadImpl implements Pad {
 
     /**

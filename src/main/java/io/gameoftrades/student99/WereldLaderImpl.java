@@ -24,6 +24,10 @@ public class WereldLaderImpl implements WereldLader {
     private Markt market;
     private List<Handel> dealers;
 
+    
+    /*
+    load the world into the studentUI
+    */
     @Override
     public Wereld laad(String resource) {
 

@@ -1,5 +1,8 @@
 package io.gameoftrades.student99;
-
+/**
+ *
+ * @author Rebano
+ */
 import io.gameoftrades.model.kaart.Pad;
 import io.gameoftrades.model.kaart.Stad;
 

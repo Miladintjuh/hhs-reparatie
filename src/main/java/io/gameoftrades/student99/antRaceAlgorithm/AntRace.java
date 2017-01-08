@@ -1,5 +1,8 @@
 package io.gameoftrades.student99.antRaceAlgorithm;
-
+/**
+ *
+ * @author Rebano
+ */
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
