@@ -60,24 +60,22 @@ public class WereldLaderImpl implements WereldLader {
         String xy = mapReader.get(0).get(0);
         String[] xyArray = xy.split(",");
 
-        int breedte = Integer.parseInt(xyArray[0]);
-        int hoogte = Integer.parseInt(xyArray[1]);
+        int width = Integer.parseInt(xyArray[0]);
+        int heigth = Integer.parseInt(xyArray[1]);
 
-        if (!checkKaart(breedte, hoogte)) {
+        if (!checkMap(width, heigth)) {
             JOptionPane.showMessageDialog(null,
-                    "Incorrecte kaart...",
+                    "Incorrect map...",
                     "FATAL ERROR",
                     JOptionPane.ERROR_MESSAGE);
         } else {
-            map = new Kaart(breedte, hoogte);
+            map = new Kaart(width, heigth);
 
-            for (int y = 1; y <= hoogte; y++) {
+            for (int y = 1; y <= heigth; y++) {
                 char[] charArray = mapReader.get(0).get(y).toCharArray();
-                for (int x = 0; x < breedte; x++) {
-                    //System.out.print("[" + charArray[x] + " " + x + " " + (y - 1) + " ]");                                       
+                for (int x = 0; x < width; x++) {                                      
                     Terrein t = new Terrein(map, Coordinaat.op(x, y - 1), TerreinType.fromLetter(charArray[x]));
                 }
-                //System.out.println("");
             }
         }
     }
@@ -90,7 +88,7 @@ public class WereldLaderImpl implements WereldLader {
             Coordinaat c = Coordinaat.op(Integer.parseInt(split[0]) - 1, Integer.parseInt(split[1]) - 1);
             if (c.getX() < 0 || c.getY() < 0 || c.getX() > map.getBreedte() || c.getY() > map.getHoogte()) {
                 JOptionPane.showMessageDialog(null,
-                        "Incorrecte stad...",
+                        "Incorrect city...",
                         "FATAL ERROR",
                         JOptionPane.ERROR_MESSAGE);
                 throw new IllegalArgumentException("One or more coordinates were outside of the map " + c);
@@ -113,7 +111,7 @@ public class WereldLaderImpl implements WereldLader {
             HandelType merchType;
             if (!split[1].equals("BIEDT") && !split[1].equals("VRAAGT")) {
                 JOptionPane.showMessageDialog(null,
-                        "Incorrecte Markt...",
+                        "Incorrect market...",
                         "FATAL ERROR",
                         JOptionPane.ERROR_MESSAGE);
                 throw new IllegalArgumentException("Verkeerde Handel");
@@ -129,16 +127,16 @@ public class WereldLaderImpl implements WereldLader {
         market = new Markt(dealers);
     }
 
-    private Stad zoekStadBijNaam(String naam) {
+    private Stad zoekStadBijNaam(String name) {
         for (Stad s : cities) {
-            if (s.getNaam().equals(naam)) {
+            if (s.getNaam().equals(name)) {
                 return s;
             }
         }
         return null;
     }
 
-    private boolean checkKaart(int x, int y) {
+    private boolean checkMap(int x, int y) {
         if (x == 0 && y == 0) {
             return true;
         }

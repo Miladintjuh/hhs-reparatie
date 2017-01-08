@@ -15,7 +15,7 @@ package io.gameoftrades.student99.antRaceAlgorithm;
         private int remaining;
         public Travel(Ant ant) {
             this.ant = ant;
-            this.remaining = ant.getTerrein().getTerreinType().getBewegingspunten();
+            this.remaining = ant.getTerrain().getTerreinType().getBewegingspunten();
         }
 
         public Ant getMier() {

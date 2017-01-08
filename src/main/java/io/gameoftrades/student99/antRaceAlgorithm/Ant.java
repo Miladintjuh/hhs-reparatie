@@ -33,8 +33,8 @@ import io.gameoftrades.model.kaart.Terrein;
          * @return true if this ant arrives.
          */
         public boolean atLocation(Integer[][] costs) {
-            int y = getCoordinaat().getY();
-            int x = getCoordinaat().getX();
+            int y = getCoordinate().getY();
+            int x = getCoordinate().getX();
             if (costs[y][x] == null) {
                 costs[y][x] = this.cost;
                 return true;
@@ -55,16 +55,16 @@ import io.gameoftrades.model.kaart.Terrein;
             return this.cost - m.cost;
         }
 
-        public Terrein getTerrein() {
+        public Terrein getTerrain() {
             return terrain;
         }
 
-        public Coordinaat getCoordinaat() {
+        public Coordinaat getCoordinate() {
             return terrain.getCoordinaat();
         }
 
         @Override
         public String toString() {
-            return cost + ":" + getCoordinaat();
+            return cost + ":" + getCoordinate();
         }
     }

@@ -23,6 +23,7 @@ public class HandelaarImpl implements Handelaar {
 
     /**
      * Opdracht 1, zie ook de handige test-set in WereldLaderImplTest.
+     * @return 
      */
     @Override
     public WereldLader nieuweWereldLader() {
@@ -44,7 +45,7 @@ public class HandelaarImpl implements Handelaar {
     @Override
     public StedenTourAlgoritme nieuwStedenTourAlgoritme() {
         // 1. Execute the city tour.
-        return null;
+        return new CityTour();
     }
 
     /**

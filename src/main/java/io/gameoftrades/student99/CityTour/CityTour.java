@@ -1,125 +1,233 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package io.gameoftrades.student99.CityTour;
 
-import io.gameoftrades.student99.antRaceAlgorithm.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+/**
+ *
+ * @author Rebano
+ */
 
 import io.gameoftrades.debug.Debuggable;
 import io.gameoftrades.debug.Debugger;
-import io.gameoftrades.debug.DummyDebugger;
-import io.gameoftrades.student49.PadImpl;
-import io.gameoftrades.model.algoritme.SnelstePadAlgoritme;
-import io.gameoftrades.model.kaart.Coordinaat;
+import io.gameoftrades.model.algoritme.StedenTourAlgoritme;
 import io.gameoftrades.model.kaart.Kaart;
 import io.gameoftrades.model.kaart.Pad;
-import io.gameoftrades.model.kaart.Richting;
-import io.gameoftrades.model.kaart.Terrein;
-import io.gameoftrades.*;
-import io.gameoftrades.model.algoritme.StedenTourAlgoritme;
 import io.gameoftrades.model.kaart.Stad;
-import io.gameoftrades.student99.WereldLaderImpl;
-import java.lang.reflect.Array;
-/**
- * Zie http://blaeul.de/s.php?l=de&d=antraces 
- */
+import io.gameoftrades.student99.CityRoutes;
+import io.gameoftrades.student99.antRaceAlgorithm.AntRace;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class CityTour implements StedenTourAlgoritme, Debuggable {
 
-   
+    /**
+     * Debugger instance.
+     */
+    private Debugger debugger;
+
+    /**
+     * Map instance.
+     */
+    private Kaart map;
+
+    /**
+     * List of cities.
+     */
+    private List<Stad> cities;
+
+    /**
+     * List of fixed cities.
+     */
+    private List<Stad> fixedCities;
+
+    /**
+     * List of cityPaths.
+     */
+    private ArrayList<CityRoutes> cityPaths;
+
+    /**
+     * List of city groups.
+     */
+    private ArrayList<CityGroup> cityGroupList;
+
+    /**
+     * Fastest path algorithm instance.
+     */
+    private AntRace antrace;
+
     @Override
-    public ArrayList<Stad> bereken(Kaart kaart, List<Stad> cities) {
-        Integer[][] tijden = new Integer[kaart.getHoogte()][kaart.getBreedte()];
-        List<Travel> mieren = new ArrayList<>();
-        Ant ouder = new Ant(kaart.getTerreinOp(start), tijden);
-        mieren.add(new Travel(ouder));
-        Ant winnaar = race(kaart, mieren, tijden, eind);
-        debug.debugRaster(kaart, tijden);
-        return backtrack(winnaar, kaart, );
-    }
-    
-    private Pad backtrack(Ant winnaar, Kaart kaart, Coordinaat start, Integer[][] tijden) {
-        List<Richting> pad = new ArrayList<Richting>();
-        Coordinaat current = winnaar.getCoordinaat();
-        Coordinaat vorig = null;
-        Ant kind =  winnaar;
-        do {
-            Ant ouder = kind.getParent();
-            if (ouder!=null) {
-                vorig = ouder.getCoordinaat();
-                pad.add(Richting.tussen(vorig, current));
+    public List<Stad> bereken(Kaart kaart, List<Stad> list) {
+        // Set the map
+        map = kaart;
+
+        // Instantiate the cityPaths list and fast path algorithm
+        cityPaths = new ArrayList<>();
+        antrace = new AntRace();
+
+        // Set the list of cities and fixed cities
+        cities = new ArrayList<>(list);
+        fixedCities = new ArrayList<>(cities);
+
+        // Clear the city group list
+        cityGroupList = new ArrayList<>();
+
+        // Run the algorithm
+        runAlgorithm();
+
+        // Keep track of the lowest path cost
+        int lowestPathCost = -1;
+        int index = 0;
+
+        // Loop through the list of city groups, to find the lowest path cost
+        for(int i = 0; i < cityGroupList.size(); i++) {
+            // Store the best city group
+            if(lowestPathCost == -1 || cityGroupList.get(i).getTotalPathCost() < lowestPathCost) {
+                lowestPathCost = cityGroupList.get(i).getTotalPathCost();
+                index = i;
             }
-            kind = ouder;
-            current = vorig;
-        } while (kind != null);
-        Collections.reverse(pad);
-        
-        Richting[] path2 = new Richting[pad.size()];
-        path2 = pad.toArray(path2);
+        }
 
-        PadImpl result = new PadImpl(path2, winnaar.getCost());
-        debug.debugPad(kaart, start, result);
-        return result;
+        // Show a debug message
+        System.out.println("The fastest route using the 'Nearest-Neighbour Algorithm' takes " + cityGroupList.get(index).getTotalPathCost() + " moves.");
+        System.out.println("Paths learned: " + cityPaths.size() + ".");
+
+        // Visually debug the path
+        debugger.debugSteden(map, this.cityGroupList.get(index).getCities());
+
+        // Get the list of cities and return it as fastest path
+        return cityGroupList.get(index).getCities();
     }
 
-    private Ant race(Kaart kaart, List<Travel> mieren, Integer[][] tijden, Coordinaat eind) {
-        while (true) {
-            List<Travel> volgendeGeneratie = new ArrayList<>();
-            for (Travel reizendeMier : mieren) {
-                reizendeMier.next();
-                if (reizendeMier.isDaar()) {
-                    Ant mier = reizendeMier.getMier();
-                    boolean spawn = mier.setGearriveerd(tijden);
-                    if (eind.equals(mier.getCoordinaat())) {
-                        return mier;
+    /**
+     * Run the algorithm to find the best path.
+     */
+    public void runAlgorithm() {
+        // Loop through the list of cities.
+        for(int start = 0; start < fixedCities.size(); start++) {
+            // Define a list with the fastest route and a variable to store the path cost
+            final ArrayList<Stad> fastestRoute = new ArrayList<>();
+            int totalPathCost = 0;
+
+            // Add the first city
+            fastestRoute.add(this.cities.get(start));
+            this.cities.remove(start);
+
+            // Variable to keep track of current city in loop
+            int cityNumber = 0;
+
+            // Loop until the list of cities is empty
+            while(!this.cities.isEmpty()) {
+                // Store the fastest path
+                int fastestPath = -1;
+                int pathLength = 0;
+
+                // Loop through the list of cities
+                for(int i = 0; i < cities.size(); i++) {
+                    // Get the path length, checks if the path is already learned
+                    if(!cityPaths.isEmpty())
+                        pathLength = getPathLength(fastestRoute, pathLength, i);
+
+                        // Get executed once, because the cityPaths list is empty at the start
+                        // calculates the path-length from a certain city to another one.
+                    else
+                        pathLength = calculateFastestPath(fastestRoute.get(fastestRoute.size() - 1), cities.get(i));
+
+                    // If the path is faster than the current one, pick this city as the fastest option.
+                    if(fastestPath == -1 || pathLength <= fastestPath) {
+                        fastestPath = pathLength;
+                        cityNumber = i;
                     }
-                    if (spawn) {
-                        for (Richting r : mier.getTerrein().getMogelijkeRichtingen()) {
-                            Coordinaat volgende = mier.getCoordinaat().naar(r);
-                            if (isLeeg(tijden, volgende)) {
-                                Ant kind = new Ant(mier, kaart.getTerreinOp(volgende));
-                                volgendeGeneratie.add(new Travel(kind));
-                            }
-                        }
-                    }
-                } else {
-                    volgendeGeneratie.add(reizendeMier);
                 }
+
+                // Increase the total path cost
+                totalPathCost += fastestPath;
+
+                // Add the city to the fastest route list, and remove it from the current list
+                fastestRoute.add(this.cities.get(cityNumber));
+                this.cities.remove(cityNumber);
             }
-            debug.debugRaster(kaart, tijden);
-            mieren = volgendeGeneratie;
+
+            // Add the fastest route to the city group along with the total path cost
+            this.cityGroupList.add(new CityGroup(fastestRoute, totalPathCost));
+
+            // Reset the city ArrayList.
+            this.cities = new ArrayList<>(fixedCities);
+
+            // Show a debug message
+            System.out.println(start + " - 'Nearest Neighbour' combinations calculated...");
         }
     }
 
-    private boolean isLeeg(Integer[][] tijden, Coordinaat volgende) {
-        return tijden[volgende.getY()][volgende.getX()] == null;
-    }
+    /**
+     * TODO: Specify method description.
+     *
+     * @param fastestRoute List of cities that define the fastest route.
+     * @param pathLength   CityRoutes length.
+     * @param i            City index.
+     * @return CityRoutes length.
+     */
+    private int getPathLength(ArrayList<Stad> fastestRoute, int pathLength, int i) {
+        // Define whether we succeed
+        boolean success = false;
 
-    public void dumpTijden(Integer[][] tijden) {
-        for (int y = 0; y < tijden.length; y++) {
-            for (int x = 0; x < tijden[0].length; x++) {
-                if (tijden[y][x] == null) {
-                    System.out.print("--");
-                } else {
-                    if (tijden[y][x] < 10) {
-                        System.out.print(".");
-                    }
-                    System.out.print(tijden[y][x]);
-                }
-                System.out.print(" ");
-            }
-            System.out.println();
+        // Loop through the list of cityPaths
+        for(CityRoutes cityPath : cityPaths) {
+            // Check if a cityPath between 2 given cities is in the cityPaths list (from start to end, and end to start), continue the loop if it isn't
+            if((!cityPath.getStart().equals(fastestRoute.get(fastestRoute.size() - 1).getCoordinaat()) ||
+                !cityPath.getEnd().equals(cities.get(i).getCoordinaat())) &&
+                (!cityPath.getEnd().equals(fastestRoute.get(fastestRoute.size() - 1).getCoordinaat()) ||
+                    !cityPath.getStart().equals(cities.get(i).getCoordinaat())))
+                continue;
+
+            // Redefine the cityPath length
+            pathLength = cityPath.getLength();
+
+            // Set the success flag
+            success = true;
         }
+
+        // If the path is not in the path list, calculate it and put in in the cityPaths list
+        if(!success)
+            pathLength = calculateFastestPath(fastestRoute.get(fastestRoute.size() - 1), cities.get(i));
+
+        // Return the path length
+        return pathLength;
     }
 
+    /**
+     * Calculate the fastest path between two cities.
+     *
+     * @param first  First city.
+     * @param second Second city.
+     * @return Cost of fastest path.
+     */
+    private int calculateFastestPath(Stad first, Stad second) {
+        // Calculate the fastest path between the two given cities
+        final Pad path = antrace.bereken(this.map, first.getCoordinaat(), second.getCoordinaat());
+
+        // Add the path to the list of cityPaths
+        cityPaths.add(new CityRoutes(first, second, path));
+
+        // Return the total time for the calculated path
+        return path.getTotaleTijd();
+    }
+
+    /**
+     * String representation of this class, which defines the algorithm name.
+     *
+     * @return Algorithm name.
+     */
     @Override
     public String toString() {
-        return "AntRace";
+        return "Nearest Neighbour Algorithm";
     }
-
-    private Debugger debug = new DummyDebugger();
 
     @Override
     public void setDebugger(Debugger debugger) {
-        this.debug = debugger;
+        this.debugger = debugger;
     }
 }
